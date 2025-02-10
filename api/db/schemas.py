@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import OrderedDict
+
 from pydantic import BaseModel
+
 
 class Genre(str, Enum):
     """Book genres."""
@@ -71,7 +73,7 @@ class InMemoryDB:
         self.books.update({book_id: data})
         return self.books.get(book_id)
 
-    def delete_book(self, book_id: int) -> None: 
+    def delete_book(self, book_id: int) -> None:
         """Deletes a specific book from database.
 
         Args:
@@ -79,4 +81,3 @@ class InMemoryDB:
         """
         if book_id in self.books:
             del self.books[book_id]
-            
