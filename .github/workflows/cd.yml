@@ -1,0 +1,40 @@
+name: CD Pipeline
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🔄 Starting Deployment on Server..."
+
+            # Navigate to project directory, create if missing
+            cd /home/ubuntu || exit
+            if [ ! -d "fastapi-book-project" ]; then
+              git clone https://github.com/malachsalama/fastapi-book-project fastapi-book-project
+            fi
+            cd fastapi-book-project
+
+            echo "🔄 Fetching latest code..."
+            git reset --hard
+            git pull origin main
+
+            echo "🛑 Stopping running containers..."
+            docker-compose down
+
+            echo "🚀 Rebuilding and starting containers..."
+            docker-compose up -d --build
+
+            echo "✅ Deployment successful!"
