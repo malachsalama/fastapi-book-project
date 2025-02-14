@@ -20,16 +20,22 @@ jobs:
           script: |
             echo "🔄 Starting Deployment on Server..."
 
-            # Navigate to project directory, create if missing
+            # Ensure the project directory exists and navigate to it
             cd /home/ubuntu || exit
             if [ ! -d "fastapi-book-project" ]; then
-              git clone https://github.com/malachsalama/fastapi-book-project fastapi-book-project
+              git clone https://github.com/malachsalama/fastapi-book-project.git fastapi-book-project
             fi
             cd fastapi-book-project
 
             echo "🔄 Fetching latest code..."
             git reset --hard
             git pull origin main
+
+            echo "🔄 Checking if Docker Compose is installed..."
+            if ! command -v docker-compose &> /dev/null; then
+              echo "⚠️ Docker Compose not found. Installing..."
+              sudo apt-get update && sudo apt-get install -y docker-compose
+            fi
 
             echo "🛑 Stopping running containers..."
             docker-compose down
