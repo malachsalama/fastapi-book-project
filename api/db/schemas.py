@@ -37,7 +37,6 @@ class InMemoryDB:
             OrderedDict[int, Book]: Ordered dictionary of books.
         """
         return self.books
-    
     def add_book(self, book: Book) -> Book:
         """Adds book to database.
 
@@ -59,7 +58,6 @@ class InMemoryDB:
             Book: Book.
         """
         return self.books.get(book_id)
-    
     def update_book(self, book_id: int, data: Book) -> Book:
         """Updates a specific book in database.
 
