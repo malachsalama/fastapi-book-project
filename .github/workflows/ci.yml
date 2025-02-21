@@ -36,7 +36,7 @@ jobs:
             "username": "GitHub Actions",
             "status": "success",
             "message": "✅ Deployment successful for commit ${{ github.event.pull_request.number }}."
-          }' ${{ secrets.SLACK_WEBHOOK_URL }}
+          }' ${{ secrets.TELEX_WEBHOOK }}
 
       - name: Notify Telex - Deployment Failed
         if: failure()
@@ -46,4 +46,4 @@ jobs:
             "username": "GitHub Actions",
             "status": "failure",
             "message": "❌ Deployment failed for commit ${{ github.event.pull_request.number }}."
-          }' ${{ secrets.SLACK_WEBHOOK_URL }}
+          }' ${{ secrets.TELEX_WEBHOOK }}
