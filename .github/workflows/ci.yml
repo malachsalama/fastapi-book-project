@@ -26,22 +26,22 @@ jobs:
       - name: Run Tests
         run: pytest
 
-      - name: Notify Telex - Deployment Successful
+      - name: Notify Telex of Test Success
         if: success()
         run: |
           curl -X POST -H "Content-Type: application/json" -d '{
-            "event_name": "cd_pipeline",
-            "username": "GitHub Actions",
-            "status": "success",
-            "message": "✅ Deployment successful for commit ${{ github.event.pull_request.number }}."
+          "event_name": "ci_pipeline",
+          "username": "GitHub Actions",
+          "status": "success",
+          "message": "✅ Tests passed successfully for PR ${{ github.event.pull_request.number }}."
           }' ${{ secrets.TELEX_WEBHOOK }}
 
-      - name: Notify Telex - Deployment Failed
+      - name: Notify Telex of Test Failure
         if: failure()
         run: |
           curl -X POST -H "Content-Type: application/json" -d '{
-            "event_name": "cd_pipeline",
+            "event_name": "ci_pipeline",
             "username": "GitHub Actions",
             "status": "failure",
-            "message": "❌ Deployment failed for commit ${{ github.event.pull_request.number }}."
+            "message": "❌ Tests failed for PR ${{ github.event.pull_request.number }}."
           }' ${{ secrets.TELEX_WEBHOOK }}

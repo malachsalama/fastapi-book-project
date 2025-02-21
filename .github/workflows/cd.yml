@@ -1,4 +1,5 @@
-name: CD Pipeline
+name: Deploy API
+
 on:
   push:
     branches:
@@ -7,40 +8,52 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "🔄 Starting Deployment on Server..."
+      - name: Notify Telex - Deployment Started
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d '{
+            "event_name": "cd_pipeline",
+            "username": "GitHub Actions",
+            "status": "in_progress",
+            "message": "🚀 Deployment started for commit ${{ github.sha }}."
+          }' ${{ secrets.TELEX_WEBHOOK }}
 
-            # Ensure the project directory exists and navigate to it
-            cd /home/ubuntu || exit
-            if [ ! -d "fastapi-book-project" ]; then
-              git clone https://github.com/malachsalama/fastapi-book-project.git fastapi-book-project
-            fi
-            cd fastapi-book-project
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ec2_key.pem
+          chmod 600 ~/.ssh/ec2_key.pem
 
-            echo "🔄 Fetching latest code..."
-            git reset --hard
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ubuntu@${{ secrets.SSH_USERNAME }} << 'EOF'
+            cd /home/ubuntu/fastapi-book-project
             git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart fastapi
+          EOF
 
-            echo "🔄 Checking if Docker Compose is installed..."
-            if ! command -v docker-compose &> /dev/null; then
-              echo "⚠️ Docker Compose not found. Installing..."
-              sudo apt-get update && sudo apt-get install -y docker-compose
-            fi
+      - name: Notify Telex - Deployment Successful
+        if: success()
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d '{
+            "event_name": "cd_pipeline",
+            "username": "GitHub Actions",
+            "status": "success",
+            "message": "✅ Deployment successful for commit ${{ github.sha }}."
+          }' ${{ secrets.TELEX_WEBHOOK }}
 
-            echo "🛑 Stopping running containers..."
-            docker-compose down
-
-            echo "🚀 Rebuilding and starting containers..."
-            docker-compose up -d --build
-
-            echo "✅ Deployment successful!"
+      - name: Notify Telex - Deployment Failed
+        if: failure()
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d '{
+            "event_name": "cd_pipeline",
+            "username": "GitHub Actions",
+            "status": "failure",
+            "message": "❌ Deployment failed for commit ${{ github.sha }}."
+          }' ${{ secrets.TELEX_WEBHOOK }}
